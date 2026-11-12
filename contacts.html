@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Байланыстар — Kitap.AI{% endblock %}
+{% block content %}
+<h1>Байланыстар</h1>
+
+<div class="box">
+    <p><b>Жоба репозиторийі:</b> <a href="{{ github_url }}" target="_blank" rel="noopener">{{ github_url }}</a></p>
+    <p class="muted">Кеңсе координаттары қоғамдық орындарға шамамен сәйкес келеді.</p>
+</div>
+
+{% for o in offices %}
+<div class="box" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px">
+    <div>
+        <h2 style="margin-top:0">{{ o.name }}</h2>
+        <p><b>Мекенжай:</b> {{ o.address }}</p>
+        {% if o.phone %}<p><b>Телефон:</b> <a href="tel:{{ o.phone }}">{{ o.phone }}</a></p>{% endif %}
+        {% if o.email %}<p><b>Email:</b> <a href="mailto:{{ o.email }}">{{ o.email }}</a></p>{% endif %}
+        <p class="muted">Координаттар: {{ o.latitude }}, {{ o.longitude }}</p>
+        <a href="{{ o.map_link }}" target="_blank" rel="noopener">Үлкен картада ашу →</a>
+    </div>
+    <iframe title="{{ o.name }} — кеңсе картасы" src="{{ o.map_src }}" loading="lazy"
+            style="width:100%; height:260px; border:1px solid #ccc; border-radius:8px"></iframe>
+</div>
+{% else %}
+<p>Кеңселер әзірге қосылмаған.</p>
+{% endfor %}
+{% endblock %}

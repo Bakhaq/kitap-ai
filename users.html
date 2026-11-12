@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Пайдаланушылар — Әкімші панелі{% endblock %}
+{% block content %}
+{% include "admin/_nav.html" %}
+<div class="box">
+    <h2 style="margin-top:0">Тіркелген пайдаланушылар ({{ users|length }}) — standby серверден</h2>
+    <p class="muted">Парольдер мен password_hash көрсетілмейді және сұрауда таңдалмайды.</p>
+    <div class="table-wrap">
+    <table>
+        <tr><th>ID</th><th>Аты-жөні</th><th>Email</th><th>Рөлі</th><th>Жазылым</th><th>Жауаптар</th><th>Тіркелген</th></tr>
+        {% for u in users %}
+        <tr>
+            <td>{{ u.id }}</td><td>{{ u.full_name }}</td><td>{{ u.email }}</td>
+            <td>{% if u.role == 'admin' %}<span class="tag">admin</span>{% else %}user{% endif %}</td>
+            <td>{{ u.subscription or '—' }}</td>
+            <td>{{ u.answers }}</td>
+            <td>{{ u.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Kitap.AI — қазақша кітаптар бір платформада{% endblock %}
+
+{% block style %}
+.hero { background: linear-gradient(135deg, #0f5257 0%, #1b7a72 100%); color: #fff; }
+.hero-inner { max-width: 1080px; margin: 0 auto; padding: 46px 15px;
+              display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; align-items: center; }
+.hero h1 { font-size: 38px; margin: 0 0 14px; line-height: 1.15; }
+.hero h1 span { color: #e8a33d; }
+.hero p { font-size: 18px; opacity: .93; }
+.hero .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.hero .cta .btn { padding: 11px 20px; font-size: 16px; }
+.hero img { width: 100%; max-width: 420px; justify-self: center; }
+.adv .icon { font-size: 28px; }
+.adv h3 { margin: 6px 0; color: #0f5257; }
+{% endblock %}
+
+{% block hero %}
+<section class="hero">
+    <div class="hero-inner">
+        <div>
+            <h1>Қазақша кітаптар —<br><span>бір платформада</span></h1>
+            <p><b>Мақсатымыз:</b> қазақ тілді оқырманға электрондық кітап пен аудиокітапты бір жерден
+               тауып, талғамына сай келесі кітапты түсінікті AI ұсынысы арқылы таңдауға көмектесу.</p>
+            <div class="cta">
+                <a class="btn btn-accent" href="{{ url_for('books') }}">Кітаптарды ашу</a>
+                {% if not current_user %}<a class="btn btn-outline" href="{{ url_for('register') }}">Тегін тіркелу</a>{% endif %}
+                <a class="btn btn-outline" href="{{ url_for('survey') }}">Сауалнамаға қатысу</a>
+            </div>
+        </div>
+        <img src="{{ url_for('static', filename='hero.svg') }}" alt="Ашық кітап, құлаққап және жұлдыздар бейнеленген Kitap.AI суреті">
+    </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<h2>Неліктен Kitap.AI</h2>
+<div class="cards adv">
+    <div class="box"><div class="icon" aria-hidden="true">📚</div><h3>Бір каталог</h3>
+        <p>Әртүрлі сайттарда шашыраған қазақша кітаптарды атауы, авторы және жанры бойынша бір жерден табасыз.</p></div>
+    <div class="box"><div class="icon" aria-hidden="true">🎧</div><h3>Оқу немесе тыңдау</h3>
+        <p>Әр кітаптың форматы көрінеді: электрондық кітап, аудиокітап немесе екеуі де.</p></div>
+    <div class="box"><div class="icon" aria-hidden="true">✨</div><h3>Түсінікті ұсыныстар</h3>
+        <p>Жүйе неге дәл осы кітапты ұсынғанын көрсетеді: «ұнаған романыңызға ұқсас», «сол автордың жаңа кітабы».</p></div>
+</div>
+
+<h2>Жаңа кітаптар</h2>
+{% if books %}
+<div class="cards books-grid">
+    {% for b in books %}{% include "_book_card.html" %}{% endfor %}
+</div>
+<p><a class="btn" href="{{ url_for('books') }}">Барлық кітаптар</a></p>
+{% endif %}
+
+<h2>Тарифтер мен өнімдер</h2>
+{% if products %}
+<div class="cards">
+    {% for p in products %}
+    <div class="card">
+        <img src="{{ p.image_url or url_for('static', filename='hero.svg') }}" alt="{{ p.name }} суреті">
+        <div class="body">
+            <b>{{ p.name }}</b>
+            <span class="muted">{{ p.summary }}</span>
+            <a href="{{ url_for('product_page', slug=p.slug) }}">Толығырақ →</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+<p><a class="btn" href="{{ url_for('products') }}">Барлық өнімдерді көру</a></p>
+{% else %}
+<p class="muted">Каталог уақытша қолжетімсіз. <a href="{{ url_for('products') }}">Каталог бетін ашып көріңіз.</a></p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,4 @@
+# Linux контейнерлеріндегі скрипттер үшін LF жол соңы міндетті
+*.sh   text eol=lf
+*.sql  text eol=lf
+*.yaml text eol=lf

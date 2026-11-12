@@ -1,0 +1,63 @@
+services:
+  postgres_primary:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REPLICATION_PASSWORD: ${REPLICATION_PASSWORD}
+    # WAL параметрлері: standby серверге өзгерістерді жіберу және standby
+    # тоқтап тұрғанда WAL жазбаларын 128 МБ көлемінде сақтап тұру
+    command: ["postgres", "-c", "wal_level=replica",
+              "-c", "max_wal_senders=10", "-c", "wal_keep_size=128MB"]
+    volumes:
+      - primary_data:/var/lib/postgresql/data
+      - ./primary-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  postgres_standby:
+    image: postgres:17-alpine
+    depends_on:
+      postgres_primary: {condition: service_healthy}
+    environment:
+      PGDATA: /var/lib/postgresql/data
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      REPLICATION_PASSWORD: ${REPLICATION_PASSWORD}
+    volumes:
+      - standby_data:/var/lib/postgresql/data
+      - ./standby/setup-standby.sh:/setup-standby.sh:ro
+    entrypoint: ["sh", "/setup-standby.sh"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    restart: unless-stopped
+
+  web:
+    build: ./app
+    ports: ["127.0.0.1:8083:5000"]
+    environment:
+      # Жазу, кіру және рөлді тексеру -> primary
+      WRITE_DB_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_primary:5432/${POSTGRES_DB}
+      # Каталог, байланыстар, есептер -> standby
+      READ_DB_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_standby:5432/${POSTGRES_DB}
+      SECRET_KEY: ${SECRET_KEY}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      GITHUB_URL: ${GITHUB_URL}
+    depends_on:
+      postgres_primary: {condition: service_healthy}
+      postgres_standby: {condition: service_healthy}
+    restart: unless-stopped
+
+# Томдар бөлек: primary және standby деректері бір-біріне тәуелсіз сақталады
+volumes:
+  primary_data:
+  standby_data:

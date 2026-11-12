@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Өнімдер — Әкімші панелі{% endblock %}
+{% block content %}
+{% include "admin/_nav.html" %}
+
+<div class="box">
+    <h2 style="margin-top:0">Өнімдер (primary серверден)</h2>
+    <div class="table-wrap">
+    <table>
+        <tr><th>ID</th><th>Атауы / slug</th><th>Санат</th><th>Баға, ₸</th><th>Күйі</th><th>Жауаптар</th><th>Әрекеттер</th></tr>
+        {% for p in products %}
+        <tr>
+            <td>{{ p.id }}</td>
+            <td><b>{{ p.name }}</b><br><span class="muted">{{ p.slug }}</span></td>
+            <td>{{ p.category }}</td>
+            <td>{{ '—' if p.price is none else '{:,.0f}'.format(p.price).replace(',', ' ') }}</td>
+            <td>{% if p.is_active %}<span class="tag">жарияланған</span>{% else %}<span class="tag off">жасырын</span>{% endif %}</td>
+            <td>{{ p.answers }}</td>
+            <td>
+                <div class="actions">
+                    <a class="btn btn-sm" href="{{ url_for('admin_product_edit', pid=p.id) }}">Өңдеу</a>
+                    <form method="post" action="{{ url_for('admin_product_toggle', pid=p.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn-sm {{ 'btn-light' if p.is_active else '' }}" type="submit">{{ 'Жасыру' if p.is_active else 'Жариялау' }}</button>
+                    </form>
+                    {% if p.is_active %}<a class="btn btn-sm btn-light" href="{{ url_for('product_page', slug=p.slug) }}" target="_blank">Ашық бет</a>{% endif %}
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+</div>
+
+<div class="box">
+    <h2 style="margin-top:0">Жаңа өнім қосу</h2>
+    <form method="post" action="{{ url_for('admin_products') }}" novalidate>
+        {% include "admin/_product_fields.html" %}
+        <p><button type="submit">Primary серверге сақтау</button></p>
+    </form>
+</div>
+{% endblock %}
