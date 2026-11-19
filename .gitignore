@@ -5,3 +5,8 @@ __pycache__/
 .idea/
 .vscode/
 *.log
+_to_delete/
+# TLS сертификаты мен жеке кілті репозиторийге жіберілмейді:
+# әр компьютерде README-дегі openssl командасымен жергілікті жасалады
+nginx/certs/*
+!nginx/certs/.gitkeep
