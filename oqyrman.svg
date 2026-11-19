@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" role="img" aria-label="Kitap.AI Оқырман суреті">
-<rect width="400" height="240" rx="16" fill="#0f5257"/>
-<circle cx="330" cy="40" r="70" fill="#ffffff" opacity=".10"/><circle cx="60" cy="220" r="60" fill="#ffffff" opacity=".08"/>
-<g transform="translate(130 40)"><path d="M70 20 C50 6,18 5,0 12 L0 110 C18 103,50 104,70 118Z" fill="#fff"/>
-<path d="M70 20 C90 6,122 5,140 12 L140 110 C122 103,90 104,70 118Z" fill="#f4f1ea"/>
-<g stroke="#b9c9c6" stroke-width="4" stroke-linecap="round"><line x1="14" y1="34" x2="56" y2="38"/><line x1="14" y1="50" x2="56" y2="53"/><line x1="84" y1="38" x2="126" y2="34"/><line x1="84" y1="53" x2="126" y2="50"/></g></g><path d="M300 70 l8 18 18 8 -18 8 -8 18 -8 -18 -18 -8 18 -8z" fill="#f6d28b"/>
-<text x="24" y="220" font-family="Arial" font-size="20" font-weight="bold" fill="#ffffff">Kitap.AI Оқырман</text>
-</svg>

@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" role="img" aria-label="Мектеп лицензиясы суреті">
-<rect width="400" height="240" rx="16" fill="#2e7d32"/>
-<circle cx="330" cy="40" r="70" fill="#ffffff" opacity=".10"/><circle cx="60" cy="220" r="60" fill="#ffffff" opacity=".08"/>
-<g transform="translate(110 40)"><path d="M90 0 L180 40 L90 80 L0 40Z" fill="#fff"/>
-   <path d="M35 58 L35 100 C60 120,120 120,145 100 L145 58 L90 82Z" fill="#f6d28b"/><line x1="170" y1="45" x2="170" y2="95" stroke="#fff" stroke-width="5"/></g>
-<text x="24" y="220" font-family="Arial" font-size="20" font-weight="bold" fill="#ffffff">Мектеп лицензиясы</text>
-</svg>
