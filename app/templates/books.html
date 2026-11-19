@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Кітаптар — Kitap.AI{% endblock %}
+{% block content %}
+<h1>Қазақ тіліндегі кітаптар мен аудиокітаптар</h1>
+<p class="muted">Белгісі <span class="tag free">Тегін</span> кітаптарды тіркелген кез келген оқырман оқиды,
+   қалғандары — <a href="{{ url_for('subscribe_offer') }}">жазылым</a> арқылы.</p>
+
+<form class="box" method="get" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:8px; align-items:end">
+    <div>
+        <label for="q">Іздеу</label>
+        <input id="q" name="q" placeholder="Атауы немесе авторы" value="{{ q }}">
+    </div>
+    <div>
+        <label for="genre">Жанр</label>
+        <select id="genre" name="genre">
+            <option value="">Барлық жанрлар</option>
+            {% for gname in genres %}<option value="{{ gname }}" {% if gname == genre %}selected{% endif %}>{{ gname }}</option>{% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="format">Формат</label>
+        <select id="format" name="format">
+            <option value="">Кез келген</option>
+            <option value="ebook" {% if fmt == 'ebook' %}selected{% endif %}>Оқу</option>
+            <option value="audio" {% if fmt == 'audio' %}selected{% endif %}>Тыңдау</option>
+        </select>
+    </div>
+    <div>
+        <label for="access">Қолжетімділік</label>
+        <select id="access" name="access">
+            <option value="">Барлығы</option>
+            <option value="free" {% if access == 'free' %}selected{% endif %}>Тек тегін</option>
+        </select>
+    </div>
+    <div><button type="submit">Көрсету</button></div>
+</form>
+
+<p class="muted">Табылды: {{ books|length }}</p>
+<div class="cards books-grid">
+    {% for b in books %}{% include "_book_card.html" %}{% else %}<p>Кітап табылмады.</p>{% endfor %}
+</div>
+{% endblock %}

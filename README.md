@@ -1,35 +1,78 @@
-# Kitap.AI — пайдаланушы бөлігі, әкімші панелі және PostgreSQL primary/standby
+# Kitap.AI — Nginx HTTPS, екі web данасы және PostgreSQL primary/standby
 
-№10–11 зертханалық жұмыстар. Kitap.AI — қазақ тіліндегі электрондық кітаптар мен аудиокітаптар платформасы.
-Сайтта ашық пайдаланушы бөлігі (каталог, өнім беті, сауалнама, байланыстар мен карта) және тек `admin`
-рөліне арналған әкімші панелі бар. Деректер PostgreSQL 17-де primary → standby ағындық репликациясымен сақталады.
+№10–12 зертханалық жұмыстар. Kitap.AI — қазақ тіліндегі электрондық кітаптар мен аудиокітаптар платформасы.
+Сайтта кітаптар каталогы, жазылым, сауалнама, байланыстар және тек `admin` рөліне арналған әкімші панелі бар.
 
 ```
-Браузер → web (Flask) → postgres_primary ⇒ postgres_standby
-           тіркелу, кіру, CRUD → primary      каталог, есептер → standby      WAL ⇒ standby
+Браузер → HTTPS Nginx (80→301, 443) → web немесе web_replica (round robin) → PostgreSQL primary ⇒ standby
 ```
+
+| Сервис | Міндеті | Сыртқы порт |
+|---|---|---|
+| `nginx` | TLS аяқтау, reverse proxy, `/static`, жүктемені бөлу | 80, 443 |
+| `web`, `web_replica` | Flask қосымшасының екі бірдей данасы | жоқ (`expose: 5000`) |
+| `postgres_primary` | Барлық жазу, кіру, рөлді тексеру | жоқ |
+| `postgres_standby` | Реплика, read only оқу | жоқ |
 
 ## Іске қосу
 
-```powershell
-copy .env.example .env          # мәндерді өзгертіңіз (GITHUB_URL — өз репозиторийіңіз)
-docker compose config
-docker compose up -d --build
+1. **`lab.local` доменін қосу.** PowerShell-ді *Run as administrator* арқылы ашып:
+   ```powershell
+   Add-Content -Path "$env:windir\System32\drivers\etc\hosts" -Value "127.0.0.1 lab.local"
+   ping lab.local
+   ```
+   Linux/WSL: `echo "127.0.0.1 lab.local" | sudo tee -a /etc/hosts`
+
+2. **Сертификат.** `nginx/certs/` ішінде дайын оқу сертификаты бар. Жаңасын жасау (Git Bash немесе WSL):
+   ```bash
+   mkdir -p nginx/certs
+   MSYS_NO_PATHCONV=1 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+     -keyout nginx/certs/lab.local.key -out nginx/certs/lab.local.crt \
+     -subj "/CN=lab.local" -addext "subjectAltName=DNS:lab.local"
+   openssl x509 -in nginx/certs/lab.local.crt -noout -subject -issuer -dates -ext subjectAltName
+   ```
+   `lab.local.key` — жеке кілт, `.gitignore` арқылы репозиторийге жіберілмейді.
+
+3. **Іске қосу:**
+   ```powershell
+   copy .env.example .env          # бір рет; құпияларды өзгертіңіз
+   docker compose config
+   docker compose up -d --build
+   docker compose ps               # 5 сервис healthy
+   docker compose exec nginx nginx -t
+   ```
+
+Сайт: https://lab.local  ·  Web күйі: https://lab.local/health  ·  Nginx күйі: https://lab.local/nginx-health
+
+Self signed сертификат болғандықтан браузер ескерту көрсетеді («Қосымша → lab.local сайтына өту»), `curl` үшін `-k`.
+80/443 порттарын басқа бағдарлама (IIS, Skype) алып тұрса, оны тоқтатыңыз.
+
+Әкімші `.env` файлындағы `ADMIN_EMAIL` / `ADMIN_PASSWORD` бойынша жасалады. Қосымша әкімші:
+`docker compose exec web flask --app app create-admin`.
+№10–11 жұмыстардың томдары сақталады: web қосымша бірінші сұрауда `app/schema.sql` миграциясын орындайды.
+
+## Тексеру (№12)
+
+```bash
+curl -I  http://lab.local                     # 301 → https://lab.local/
+curl -kI https://lab.local/static/style.css   # 200, Server: nginx, Expires, Cache-Control
+curl -k  https://lab.local/nginx-health       # nginx ok
+for i in 1 2 3 4 5 6; do curl -sk https://lab.local/health; echo; done   # instance: kitap-web-1 / kitap-web-2
+docker compose exec nginx tail -n 20 /var/log/nginx/access.log           # upstream=... екі түрлі IP
+curl http://localhost:5000                    # қосылу мүмкін емес (web порты жабық)
+```
+
+**Failover сынағы**
+
+```bash
+docker compose stop web
 docker compose ps
+curl -kI https://lab.local                    # сайт web_replica арқылы ашылады (X-Upstream тақырыбы)
+curl -k  https://lab.local/health             # instance: kitap-web-2
+docker compose logs --tail=20 nginx
+docker compose start web
+docker compose ps                             # web қайта healthy
 ```
-
-Сайт: http://localhost:8083  ·  Күй: http://localhost:8083/health
-
-Әкімші `.env` файлындағы `ADMIN_EMAIL` / `ADMIN_PASSWORD` бойынша алғашқы сұрауда жасалады.
-Қосымша әкімшіні қауіпсіз команда арқылы жасауға болады (тіркелу формасы `admin` рөлін бермейді):
-
-```powershell
-docker compose exec web flask --app app create-admin
-```
-
-№10 жұмыстың томдары сақталған болса, оларды өшірудің қажеті жоқ: web қосымша бірінші сұрауда
-`app/schema.sql` миграциясын орындайды (ескі `users` кестесі `users_lab10` болып сақталады).
-Таза бастау үшін: `docker compose down -v`.
 
 ## Беттер мен маршруттар
 
@@ -57,7 +100,9 @@ docker compose exec web flask --app app create-admin
 * Пароль тек `werkzeug.security` hash түрінде сақталады; барлық SQL сұраулары параметрленген.
 * Әр POST формасында CSRF белгісі; сессиялық cookie — `HttpOnly`, `SameSite=Lax`; сессияда тек `user_id`.
 * Рөл әр сұрауда серверде primary-ден оқылып тексеріледі (`admin_required`), `user` рөлі `/admin` бетінде 403 алады.
-* Құпиялар `.env` файлында, ол `.gitignore` арқылы репозиторийге түспейді.
+* Құпиялар `.env` файлында, TLS жеке кілті `nginx/certs/*.key` — екеуі де `.gitignore` арқылы репозиторийге түспейді.
+* Тек TLS 1.2 және 1.3; HTTP сұраныстары HTTPS-ке қайта бағытталады; cookie — `Secure`.
+* Web және PostgreSQL порттары host-қа жарияланбайды; `X-Forwarded-For` / `X-Forwarded-Proto` қосымшаға беріледі (`ProxyFix`).
 
 ## Тексеру командалары
 
@@ -78,7 +123,10 @@ docker compose restart
 ## Файл құрылымы
 
 ```
-├── compose.yaml              3 сервис, бөлек томдар (primary_data, standby_data)
+├── compose.yaml              5 сервис: nginx, web, web_replica, postgres_primary, postgres_standby
+├── nginx/
+│   ├── nginx.conf            upstream, HTTPS, redirect, /static, proxy headers
+│   └── certs/                lab.local.crt (+ lab.local.key — тек жергілікті)
 ├── .env.example              құпиялар үлгісі (.env репозиторийге жүктелмейді)
 ├── primary-init/
 │   ├── 01-replication.sh     replicator рөлі және pg_hba
@@ -89,7 +137,7 @@ docker compose restart
     ├── app.py                Flask қосымшасы
     ├── schema.sql            03-users.sql көшірмесі (бар томдарға миграция)
     ├── templates/            ашық беттер және admin/ панелі
-    └── static/               суреттер (hero.svg, img/*.svg)
+    └── static/               style.css, hero.svg, img/*.svg (Nginx тікелей береді)
 ```
 
 ## GitHub-қа жариялау
@@ -99,7 +147,7 @@ git init
 git add .
 git commit -m "№10: Docker Compose, PostgreSQL primary/standby, Flask CRUD"
 git branch -M main
-git remote add origin https://github.com/<github-логин>/kitap-ai-lab11.git
+git remote add origin https://github.com/Bakhaq/kitap-ai.git
 git push -u origin main
 ```
 

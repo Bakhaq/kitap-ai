@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Каталог — Kitap.AI{% endblock %}
+{% block content %}
+<h1>Kitap.AI өнімдері</h1>
+
+<form class="box" method="get" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:8px; align-items:end">
+    <div>
+        <label for="q">Іздеу</label>
+        <input id="q" name="q" placeholder="Атауы немесе сипаттамасы" value="{{ q }}">
+    </div>
+    <div>
+        <label for="category">Санат</label>
+        <select id="category" name="category">
+            <option value="">Барлық санаттар</option>
+            {% for c in categories %}<option value="{{ c }}" {% if c == category %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+    </div>
+    <div><button type="submit">Көрсету</button></div>
+</form>
+
+<p class="muted">Табылды: {{ products|length }}</p>
+<div class="cards">
+    {% for p in products %}
+    <div class="card">
+        <img src="{{ p.image_url or url_for('static', filename='hero.svg') }}" alt="{{ p.name }} суреті">
+        <div class="body">
+            <span class="tag">{{ p.category }}</span>
+            <b>{{ p.name }}</b>
+            <span>{{ p.summary }}</span>
+            <span class="price">{% if p.price is none %}Келісім бойынша{% elif p.price == 0 %}Тегін{% else %}{{ '{:,.0f}'.format(p.price).replace(',', ' ') }} ₸{% endif %}</span>
+            <span class="muted">{{ p.price_model }}</span>
+            <a class="btn" href="{{ url_for('product_page', slug=p.slug) }}">Толығырақ</a>
+        </div>
+    </div>
+    {% else %}
+    <p>Сұрауыңыз бойынша өнім табылмады.</p>
+    {% endfor %}
+</div>
+{% endblock %}

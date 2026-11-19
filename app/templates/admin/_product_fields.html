@@ -1,0 +1,44 @@
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="grid2">
+    <div>
+        <label for="name">Атауы <span class="req">*</span></label>
+        <input id="name" name="name" maxlength="140" required value="{{ form.name or '' }}">
+    </div>
+    <div>
+        <label for="slug">Slug (URL үшін: латын әріптері, сан, дефис) <span class="req">*</span></label>
+        <input id="slug" name="slug" maxlength="140" required pattern="[a-z0-9-]{3,140}" value="{{ form.slug or '' }}">
+    </div>
+    <div>
+        <label for="category">Санат <span class="req">*</span></label>
+        <select id="category" name="category" required>
+            {% for c in categories %}<option value="{{ c }}" {% if form.category == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="price">Баға, ₸ (бос болса — «келісім бойынша»)</label>
+        <input id="price" name="price" inputmode="decimal" value="{{ '' if form.price is none else form.price }}">
+    </div>
+    <div>
+        <label for="price_model">Ұсыну моделі <span class="req">*</span></label>
+        <input id="price_model" name="price_model" maxlength="160" required placeholder="мысалы: Айына 1 990 ₸" value="{{ form.price_model or '' }}">
+    </div>
+    <div>
+        <label for="image_url">Сурет (/static/img/... немесе https://...)</label>
+        <input id="image_url" name="image_url" value="{{ form.image_url or '' }}">
+    </div>
+</div>
+<label for="summary">Қысқаша сипаттама (карточкаға, 20–300 таңба) <span class="req">*</span></label>
+<input id="summary" name="summary" maxlength="300" required value="{{ form.summary or '' }}">
+<label for="description">Толық сипаттама (кемінде 2 абзац, абзацтар бос жолмен бөлінеді) <span class="req">*</span></label>
+<textarea id="description" name="description" rows="7" required>{{ form.description or '' }}</textarea>
+<div class="grid2">
+    <div>
+        <label for="features">Ерекшеліктер (әр жолға біреуден) <span class="req">*</span></label>
+        <textarea id="features" name="features" rows="4" required>{{ form.features or '' }}</textarea>
+    </div>
+    <div>
+        <label for="audience">Мақсатты аудитория <span class="req">*</span></label>
+        <textarea id="audience" name="audience" rows="4" maxlength="300" required>{{ form.audience or '' }}</textarea>
+    </div>
+</div>
+<label for="is_active" style="font-weight:normal"><input type="checkbox" id="is_active" name="is_active" {% if form.is_active %}checked{% endif %}> Каталогта жариялау</label>

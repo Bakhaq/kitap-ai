@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Kitap.AI{% endblock %}
+{% block content %}
+<div class="box">
+    <h2>{{ code }} · {{ title }}</h2>
+    <p>{{ message }}</p>
+    <p><a class="btn" href="{{ url_for('index') }}">Басты бетке</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Кітаптар — Әкімші панелі{% endblock %}
+{% block content %}
+{% include "admin/_nav.html" %}
+<div class="box">
+    <h2 style="margin-top:0">Кітаптар ({{ books|length }}) — primary серверден</h2>
+    <div class="table-wrap">
+    <table>
+        <tr><th>ID</th><th>Атауы</th><th>Автор</th><th>Жанр</th><th>Формат</th><th>Қолжетімділік</th><th>Күйі</th><th>Әрекеттер</th></tr>
+        {% for b in books %}
+        <tr>
+            <td>{{ b.id }}</td><td><b>{{ b.title }}</b></td><td>{{ b.author }}</td><td>{{ b.genre }}</td>
+            <td>{{ formats[b.book_format] }}</td>
+            <td>{% if b.is_free %}<span class="tag free">тегін</span>{% else %}<span class="tag sub">жазылым</span>{% endif %}</td>
+            <td>{% if b.is_active %}<span class="tag">жарияланған</span>{% else %}<span class="tag off">жасырын</span>{% endif %}</td>
+            <td><div class="actions">
+                <a class="btn btn-sm" href="{{ url_for('admin_book_edit', bid=b.id) }}">Өңдеу</a>
+                <form method="post" action="{{ url_for('admin_book_toggle', bid=b.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn-sm {{ 'btn-light' if b.is_active else '' }}" type="submit">{{ 'Жасыру' if b.is_active else 'Жариялау' }}</button>
+                </form>
+            </div></td>
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+</div>
+<div class="box">
+    <h2 style="margin-top:0">Жаңа кітап қосу</h2>
+    <form method="post" action="{{ url_for('admin_books') }}" novalidate>
+        {% include "admin/_book_fields.html" %}
+        <p><button type="submit">Primary серверге сақтау</button></p>
+    </form>
+</div>
+{% endblock %}

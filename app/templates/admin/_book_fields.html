@@ -1,0 +1,27 @@
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="grid2">
+    <div>
+        <label for="title">Кітап атауы <span class="req">*</span></label>
+        <input id="title" name="title" maxlength="150" required value="{{ form.title or '' }}">
+    </div>
+    <div>
+        <label for="author">Автор <span class="req">*</span></label>
+        <input id="author" name="author" maxlength="120" required value="{{ form.author or '' }}">
+    </div>
+    <div>
+        <label for="genre">Жанр <span class="req">*</span></label>
+        <select id="genre" name="genre" required>
+            {% for gname in genres %}<option value="{{ gname }}" {% if form.genre == gname %}selected{% endif %}>{{ gname }}</option>{% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="book_format">Формат <span class="req">*</span></label>
+        <select id="book_format" name="book_format" required>
+            {% for key, name in formats.items() %}<option value="{{ key }}" {% if form.book_format == key %}selected{% endif %}>{{ name }}</option>{% endfor %}
+        </select>
+    </div>
+</div>
+<label for="description">Сипаттама (10–1000 таңба) <span class="req">*</span></label>
+<textarea id="description" name="description" rows="3" maxlength="1000" required>{{ form.description or '' }}</textarea>
+<label for="is_free" style="font-weight:normal"><input type="checkbox" id="is_free" name="is_free" {% if form.is_free %}checked{% endif %}> Тегін (жазылымсыз оқуға болады)</label>
+<label for="is_active" style="font-weight:normal"><input type="checkbox" id="is_active" name="is_active" {% if form.is_active %}checked{% endif %}> Каталогта жариялау</label>

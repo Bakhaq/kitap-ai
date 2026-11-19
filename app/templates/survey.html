@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Сауалнама — Kitap.AI{% endblock %}
+{% block content %}
+<div class="box" style="max-width:640px; margin:0 auto">
+    <h1>Өнімді бағалаңыз</h1>
+    <p class="muted">Жауабыңыз Kitap.AI-ды жақсартуға көмектеседі. <span class="req">*</span> — міндетті өрістер.</p>
+    <form method="post" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="product_id">Өнім <span class="req">*</span></label>
+        <select id="product_id" name="product_id" required>
+            <option value="">— таңдаңыз —</option>
+            {% for p in products %}<option value="{{ p.id }}" {% if form.product_id|string == p.id|string %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+        </select>
+
+        <fieldset style="border:none; padding:0; margin:8px 0">
+            <legend style="font-weight:bold; font-size:14px">Бағаңыз (1 — мүлде ұнамады, 5 — өте ұнады) <span class="req">*</span></legend>
+            <div style="display:flex; gap:16px; margin-top:6px">
+                {% for r in range(1, 6) %}
+                <label for="r{{ r }}" style="font-weight:normal; margin:0"><input type="radio" id="r{{ r }}" name="rating" value="{{ r }}" style="width:auto" {% if form.rating == r|string %}checked{% endif %}> {{ r }}</label>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <label for="intent">Ниетіңіз <span class="req">*</span></label>
+        <select id="intent" name="intent" required>
+            <option value="">— таңдаңыз —</option>
+            {% for key, text in intents.items() %}<option value="{{ key }}" {% if form.intent == key %}selected{% endif %}>{{ text }}</option>{% endfor %}
+        </select>
+
+        <label for="comment">Пікір</label>
+        <textarea id="comment" name="comment" rows="4" maxlength="1000" placeholder="Не ұнады, нені жақсарту керек?">{{ form.comment }}</textarea>
+        <p><button type="submit">Жіберу</button></p>
+    </form>
+</div>
+{% endblock %}

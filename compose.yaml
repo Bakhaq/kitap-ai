@@ -1,3 +1,32 @@
+# Kitap.AI — №12 зертханалық жұмыс
+# Браузер → HTTPS Nginx → web немесе web_replica → PostgreSQL primary ⇒ standby
+# Сыртқы порттар тек Nginx-те (80, 443). web және дерекқорлар host-қа жарияланбайды.
+
+# web және web_replica үшін ортақ конфигурация (бір image, бірдей орта айнымалылары)
+x-web-base: &web-base
+  build: ./app
+  environment:
+    # Жазу, кіру және рөлді тексеру -> primary
+    WRITE_DB_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_primary:5432/${POSTGRES_DB}
+    # Каталог, байланыстар, есептер -> standby
+    READ_DB_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_standby:5432/${POSTGRES_DB}
+    SECRET_KEY: ${SECRET_KEY}           # екі данада бірдей: сессия кез келген данада жарамды
+    ADMIN_EMAIL: ${ADMIN_EMAIL}
+    ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    GITHUB_URL: ${GITHUB_URL}
+    COOKIE_SECURE: "1"                  # сайт тек HTTPS арқылы ашылады
+  expose:
+    - "5000"                            # тек ішкі желіге, host-та порт жоқ
+  depends_on:
+    postgres_primary: {condition: service_healthy}
+    postgres_standby: {condition: service_healthy}
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+    interval: 5s
+    timeout: 3s
+    retries: 15
+  restart: unless-stopped
+
 services:
   postgres_primary:
     image: postgres:17-alpine
@@ -6,8 +35,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       REPLICATION_PASSWORD: ${REPLICATION_PASSWORD}
-    # WAL параметрлері: standby серверге өзгерістерді жіберу және standby
-    # тоқтап тұрғанда WAL жазбаларын 128 МБ көлемінде сақтап тұру
     command: ["postgres", "-c", "wal_level=replica",
               "-c", "max_wal_senders=10", "-c", "wal_keep_size=128MB"]
     volumes:
@@ -41,23 +68,33 @@ services:
     restart: unless-stopped
 
   web:
-    build: ./app
-    ports: ["127.0.0.1:8083:5000"]
-    environment:
-      # Жазу, кіру және рөлді тексеру -> primary
-      WRITE_DB_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_primary:5432/${POSTGRES_DB}
-      # Каталог, байланыстар, есептер -> standby
-      READ_DB_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_standby:5432/${POSTGRES_DB}
-      SECRET_KEY: ${SECRET_KEY}
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      GITHUB_URL: ${GITHUB_URL}
+    <<: *web-base
+    hostname: kitap-web-1              # /health жауабындағы instance мәні
+
+  web_replica:
+    <<: *web-base
+    hostname: kitap-web-2
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./app/static:/srv/static:ro     # статикалық файлдарды Nginx тікелей береді
     depends_on:
-      postgres_primary: {condition: service_healthy}
-      postgres_standby: {condition: service_healthy}
+      web: {condition: service_healthy}
+      web_replica: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/nginx-health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
 
-# Томдар бөлек: primary және standby деректері бір-біріне тәуелсіз сақталады
+# Деректер томдары өзгеріссіз: №10–11 жұмыстардың деректері сақталады
 volumes:
   primary_data:
   standby_data:
